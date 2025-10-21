@@ -55,10 +55,17 @@ class ProfileAcc extends StatelessWidget {
               const SizedBox(height: 20),
               CustomButton(
                 text: 'Выйти с аккаунта',
-                onPressed: () {
-                  // Логика выхода из аккаунта
+                onPressed: () async {
                   Navigator.of(context).pop(); // закрываем модалку
-                  // Добавьте здесь вызов провайдера для очистки данных или логаута
+
+                  final userProvider = context.read<UserProvider>();
+                  await userProvider.logout();
+
+                  // Перенаправление на экран авторизации или начальный
+                  Navigator.of(context).pushNamedAndRemoveUntil(
+                    '/email-registration',
+                        (route) => false,
+                  );
                 },
                 width: double.infinity,
               ),

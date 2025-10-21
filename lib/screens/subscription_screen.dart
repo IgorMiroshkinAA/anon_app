@@ -8,6 +8,85 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import '../providers/user_provider.dart';
 
+const Map<String, List<Map<String, String>>> planFeatures = {
+  'Бесплатный': [
+    {
+      'icon': 'chat_bubble_outline',
+      'title': 'Ограниченное количество чатов',
+      'subtitle': 'Ежедневно в приложении доступно по три новых чата',
+    },
+    {
+      'icon': 'topic_outlined',
+      'title': 'Настройка темы разговора',
+      'subtitle': 'Выбери, о чём хочешь поговорить — найдём подходящего собеседника',
+    },
+    {
+      'icon': 'visibility_off_outlined',
+      'title': 'Анонимное общение',
+      'subtitle': 'Никакой личной информации — только ник и стиль общения',
+    },
+    {
+      'icon': 'timer',
+      'title': 'Ограниченное время для общения',
+      'subtitle': 'Чат архивируется после 20-ти минут\n отсутствия активности',
+    },
+  ],
+  'Plus': [
+    {
+      'icon': 'chat_bubble_outline',
+      'title': 'Больше чатов',
+      'subtitle': 'Получайте по 5 новых \nчатов каждый день',
+    },
+    {
+      'icon': 'archive',
+      'title': 'Архив 48 ч',
+      'subtitle': 'Cохраняем ваши переписки на двое \nсуток, чтобы вы могли вернуться\n к интересным беседам',
+    },
+    {
+      'icon': 'double',
+      'title': 'Повторный контакт',
+      'subtitle': 'Можете снова начать диалог \nс понравившимся собеседником',
+    },
+    {
+      'icon': 'age',
+      'title': 'Фильтр по возрасту',
+      'subtitle': 'Находите людей ближе к вашему возрасту',
+    },
+    {
+      'icon': 'timer',
+      'title': 'Ограниченное время для общения',
+      'subtitle': 'Чат архивируется после 20-ти минут\n отсутствия активности',
+    },
+  ],
+  'Premium': [
+    {
+      'icon': 'chat_bubble_outline',
+      'title': 'Безлимитные чаты',
+      'subtitle': 'Нет ограничений — общайтесь сколько хотите',
+    },
+    {
+      'icon': 'archive',
+      'title': 'Архив навсегда',
+      'subtitle': 'Сохраняйте важные разговоры \nи возвращайтесь к ним в любое время',
+    },
+    {
+      'icon': 'crown',
+      'title': 'Приоритетный подбор',
+      'subtitle': 'Вас будут видеть первыми в очереди на новые чаты — больше внимания, быстрее отклик',
+    },
+    {
+      'icon': 'age',
+      'title': 'Фильтр по возрасту',
+      'subtitle': 'Находите людей ближе к вашему возрасту',
+    },
+    {
+      'icon': 'timer',
+      'title': 'Ограниченное время для общения',
+      'subtitle': 'Чат архивируется после 20-ти минут отсутствия активности',
+    },
+  ],
+};
+
 // Модель для плана подписки
 class SubscriptionPlan {
   final int id;
@@ -48,101 +127,24 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   // final List<String> tabs = ['Бесплатный', 'Plus', 'Premium'];
   List<String> get tabs => plans.map((plan) => plan.name).toList();
 
-  final Map<String, List<Map<String, String>>> planFeatures = {
-    'Бесплатный': [
-      {
-        'icon': 'chat_bubble_outline',
-        'title': 'Ограниченное количество чатов',
-        'subtitle': 'Ежедневно в приложении доступно по три новых чата',
-      },
-      {
-        'icon': 'topic_outlined',
-        'title': 'Настройка темы разговора',
-        'subtitle':
-            'Выбери, о чём хочешь поговорить — найдём подходящего собеседника',
-      },
-      {
-        'icon': 'visibility_off_outlined',
-        'title': 'Анонимное общение',
-        'subtitle': 'Никакой личной информации — только ник и стиль общения',
-      },
-      {
-        'icon': 'timer',
-        'title': 'Ограниченное время для общения',
-        'subtitle':
-            'Чат архивируется после 20-ти минут\n отсутствия активности',
-      },
-    ],
-    'Plus': [
-      {
-        'icon': 'chat_bubble_outline',
-        'title': 'Больше чатов',
-        'subtitle': 'Получайте по 5 новых \nчатов каждый день',
-      },
-      {
-        'icon': 'archive',
-        'title': 'Архив 48 ч',
-        'subtitle':
-            'Cохраняем ваши переписки на двое \nсуток, чтобы вы могли вернуться\n к интересным беседам',
-      },
-      {
-        'icon': 'double',
-        'title': 'Повторный контакт',
-        'subtitle': 'Можете снова начать диалог \nс понравившимся собеседником',
-      },
-      {
-        'icon': 'age',
-        'title': 'Фильтр по возрасту',
-        'subtitle': 'Находите людей ближе к вашему возрасту',
-      },
-      {
-        'icon': 'timer',
-        'title': 'Ограниченное время для общения',
-        'subtitle':
-            'Чат архивируется после 20-ти минут\n отсутствия активности',
-      },
-    ],
-    'Premium': [
-      {
-        'icon': 'chat_bubble_outline',
-        'title': 'Безлимитные чаты',
-        'subtitle': 'Нет ограничений — общайтесь сколько хотите',
-      },
-      {
-        'icon': 'archive',
-        'title': 'Архив навсегда',
-        'subtitle':
-            'Сохраняйте важные разговоры \nи возвращайтесь к ним в любое время',
-      },
-      {
-        'icon': 'crown',
-        'title': 'Приоритетный подбор',
-        'subtitle':
-            'Вас будут видеть первыми в очереди на новые чаты — больше внимания, быстрее отклик',
-      },
-      {
-        'icon': 'age',
-        'title': 'Фильтр по возрасту',
-        'subtitle': 'Находите людей ближе к вашему возрасту',
-      },
-      {
-        'icon': 'timer',
-        'title': 'Ограниченное время для общения',
-        'subtitle': 'Чат архивируется после 20-ти минут отсутствия активности',
-      },
-    ],
-  };
 
   @override
   void initState() {
     super.initState();
-    _fetchPlans();
+
+    plans = [
+      SubscriptionPlan(id: 1, name: 'Бесплатный', maxTopics: 3, price: '0'),
+      SubscriptionPlan(id: 2, name: 'Plus', maxTopics: 10, price: '499'),
+      SubscriptionPlan(id: 3, name: 'Premium', maxTopics: 30, price: '999'),
+    ];
+
+    isLoading = false;
   }
 
   Future<void> _fetchPlans() async {
     try {
       final response = await http.get(
-        Uri.parse('http://89.109.34.227:3000/api/plans'),
+        Uri.parse('http://10.0.2.2:4000/api/plans'),
         headers: {'Content-Type': 'application/json'},
       );
 
@@ -244,47 +246,47 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     final activeTabIndex = plans.indexWhere((plan) => plan.id == activePlanId);
     final activeTab = activeTabIndex != -1 ? activeTabIndex : 0;
 
-    if (isLoading) {
-      return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF97CF9A), Color(0xFFFFFFFF), Color(0xFFA992E0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: const Center(child: CircularProgressIndicator()),
-      );
-    }
+    // if (isLoading) {
+    //   return Container(
+    //     decoration: const BoxDecoration(
+    //       gradient: LinearGradient(
+    //         colors: [Color(0xFF97CF9A), Color(0xFFFFFFFF), Color(0xFFA992E0)],
+    //         begin: Alignment.topCenter,
+    //         end: Alignment.bottomCenter,
+    //       ),
+    //     ),
+    //     child: const Center(child: CircularProgressIndicator()),
+    //   );
+    // }
 
-    if (errorMessage.isNotEmpty) {
-      return Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xFF97CF9A), Color(0xFFFFFFFF), Color(0xFFA992E0)],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                errorMessage,
-                style: const TextStyle(color: Colors.red),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _fetchPlans,
-                child: const Text('Повторить'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+    // if (errorMessage.isNotEmpty) {
+    //   return Container(
+    //     decoration: const BoxDecoration(
+    //       gradient: LinearGradient(
+    //         colors: [Color(0xFF97CF9A), Color(0xFFFFFFFF), Color(0xFFA992E0)],
+    //         begin: Alignment.topCenter,
+    //         end: Alignment.bottomCenter,
+    //       ),
+    //     ),
+    //     child: Center(
+    //       child: Column(
+    //         mainAxisAlignment: MainAxisAlignment.center,
+    //         children: [
+    //           Text(
+    //             errorMessage,
+    //             style: const TextStyle(color: Colors.red),
+    //             textAlign: TextAlign.center,
+    //           ),
+    //           const SizedBox(height: 16),
+    //           ElevatedButton(
+    //             onPressed: _fetchPlans,
+    //             child: const Text('Повторить'),
+    //           ),
+    //         ],
+    //       ),
+    //     ),
+    //   );
+    // }
 
     if (plans.isEmpty) {
       return Container(
@@ -300,7 +302,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     }
 
     List<Map<String, String>> selectedFeatures =
-        planFeatures[tabs[selectedTab]] ?? [];
+    tabs.isNotEmpty ? planFeatures[tabs[selectedTab]] ?? [] : [];
 
     List<Widget> featureWidgets = selectedFeatures.map((feature) {
       return FeatureItem(

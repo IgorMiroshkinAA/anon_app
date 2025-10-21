@@ -11,7 +11,8 @@ import 'account_screen.dart';
 import 'email_registration_screen.dart';
 
 class ExistingAccountPasswordScreen extends StatefulWidget {
-  const ExistingAccountPasswordScreen({super.key});
+  final String email;
+  const ExistingAccountPasswordScreen({required this.email, super.key});
 
   @override
   State<ExistingAccountPasswordScreen> createState() =>
@@ -28,48 +29,10 @@ class _ExistingAccountPasswordScreenState
   bool showRestoreButton = false;
   bool isContinueEnabled = false;
 
-  static const String correctPassword = "12345";
-
   bool isValidPassword(String password) {
     if (password.length < 5) return false;
     final regex = RegExp(r'^[a-zA-Z0-9_.]+$');
     return regex.hasMatch(password);
-  }
-
-  Future<bool> checkPasswordOnBackend(String password) async {
-    // final url = Uri.parse('https://backend.com/api/check_password');
-    await Future.delayed(const Duration(seconds: 1));
-
-    return password == correctPassword;
-
-    // try {
-    //   // Формируем тело запроса в формате JSON
-    //   final body = jsonEncode({'password': password});
-
-    //   final response = await http.post(
-    //     url,
-    //     headers: {
-    //       'Content-Type': 'application/json',
-    //       // добавить заголовки авторизации, если нужны
-    //     },
-    //     body: body,
-    //   );
-
-    //   if (response.statusCode == 200) {
-    //     final data = jsonDecode(response.body);
-
-    //     // Если, сервер возвращает { "valid": true } или { "valid": false }
-    //     return data['valid'] == true;
-    //   } else {
-    //     // Обработка ошибок сервера
-    //     print('Ошибка сервера: ${response.statusCode}');
-    //     return false;
-    //   }
-    // } catch (e) {
-    //   // Обработка ошибок запроса/сети
-    //   print('Ошибка запроса: $e');
-    //   return false;
-    // }
   }
 
   void onContinue() async {
@@ -91,13 +54,8 @@ class _ExistingAccountPasswordScreenState
     }
 
     try {
-      // Используем реальный email и введенный пароль
-
       final userProvider = Provider.of<UserProvider>(context, listen: false);
-      await userProvider.login(
-        "login", // email из параметра экрана
-        password, // реальный введенный пароль
-      );
+      await userProvider.login(widget.email, password);
 
       if (mounted) {
         Navigator.of(context).pushReplacement(
@@ -109,9 +67,9 @@ class _ExistingAccountPasswordScreenState
         showBackendError = true;
         showRestoreButton = true;
       });
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Ошибка: ${e.toString()}')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка: ${e.toString()}')),
+      );
     } finally {
       setState(() {
         isLoading = false;
@@ -169,23 +127,16 @@ class _ExistingAccountPasswordScreenState
         child: SafeArea(
           child: Stack(
             children: [
-              // Кнопка назад слева сверху
               Positioned(top: 12, left: 12, child: const CustomBackButton()),
-
-              // Центрированный контент с отступами и скроллом
               Center(
                 child: SingleChildScrollView(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.symmetric(horizontal: 24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment
-                        .stretch, // Чтобы кнопка растягивалась
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // Чтобы кнопка назад не присутствовала дважды, её убираем из списка детей
-                      const SizedBox(
-                        height: 70,
-                      ), // пространство под кнопку назад
+                      const SizedBox(height: 70),
                       const Text(
                         'Введите пароль',
                         textAlign: TextAlign.center,
@@ -246,21 +197,16 @@ class _ExistingAccountPasswordScreenState
                         isEnabled: showRestoreButton && !isLoading,
                         onPressed: showRestoreButton && !isLoading
                             ? () async {
-                                Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) =>
-                                        const EmailRegistrationScreen(mode: EmailScreenMode.login),
-                                  ),
-                                );
-                              }
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) =>
+                              const EmailRegistrationScreen(),
+                            ),
+                          );
+                        }
                             : null,
                         backgroundColor: showRestoreButton
-                            ? const Color.fromRGBO(
-                                51,
-                                51,
-                                51,
-                                1,
-                              ) // темный фон при активной кнопке
+                            ? const Color.fromRGBO(51, 51, 51, 1)
                             : const Color.fromRGBO(0, 0, 0, 0.2),
                         textColor: Colors.white,
                         width: double.infinity,

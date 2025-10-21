@@ -3,57 +3,59 @@ import 'dart:developer';
 import 'package:http/http.dart' as http;
 
 class AuthService {
-  // static const String baseUrl = 'http://89.109.34.227:3000/api';
   static const String baseUrl = 'http://10.0.2.2:4000/api';
 
   static Future<String> requestCode(String email) async {
+    final url = Uri.parse('$baseUrl/auth/request-code');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/request-code'),
+        url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData['token']; // Возвращаем временный токен
+        final data = json.decode(response.body);
+        return data['token'];
       } else if (response.statusCode == 429) {
         throw Exception('Слишком много запросов. Попробуйте позже.');
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Ошибка отправки кода');
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Ошибка отправки кода');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса кода: $e');
     }
   }
 
   static Future<String> resendCode(String email) async {
+    final url = Uri.parse('$baseUrl/auth/resend-code');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/resend-code'),
+        url,
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email}),
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData['token']; // Возвращаем временный токен
+        final data = json.decode(response.body);
+        return data['token'];
       } else if (response.statusCode == 429) {
         throw Exception('Слишком много запросов. Попробуйте позже.');
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Ошибка отправки кода');
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Ошибка повторной отправки кода');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса повторного кода: $e');
     }
   }
 
   static Future<String> verifyCode(String tempToken, String code) async {
+    final url = Uri.parse('$baseUrl/auth/verify-code');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/verify-code'),
+        url,
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $tempToken',
@@ -62,20 +64,21 @@ class AuthService {
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData['token']; // ← accessToken
+        final data = json.decode(response.body);
+        return data['token'];
       } else {
-        final errorData = json.decode(response.body);
-        throw Exception(errorData['message'] ?? 'Неверный код');
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Неверный код');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка проверки кода: $e');
     }
   }
 
   static Future<String> setNickname(String accessToken, String nickname) async {
+    final url = Uri.parse('$baseUrl/auth/set-nickname');
     final response = await http.post(
-      Uri.parse('$baseUrl/auth/set-nickname'),
+      url,
       headers: {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
@@ -84,155 +87,182 @@ class AuthService {
     );
 
     if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      return responseData['token'];
+      final data = json.decode(response.body);
+      return data['token'];
     } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Ошибка при установке никнейма');
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка при установке никнейма');
     }
   }
 
-
-  static Future<void> setAge(String finalToken, int age) async {
-    log(finalToken);
+  static Future<void> setAge(String accessToken, int age) async {
+    final url = Uri.parse('$baseUrl/auth/set-age');
     try {
-      await http.post(
-        Uri.parse('$baseUrl/auth/set-age'),
+      final response = await http.post(
+        url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $finalToken',
+          'Authorization': 'Bearer $accessToken',
         },
         body: json.encode({'age': age}),
       );
+
+      if (response.statusCode != 200) {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Ошибка при установке возраста');
+      }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса возраста: $e');
     }
   }
 
-  static Future<String> setPassword(
-    String finalToken,
-    String password,
-    String confirm,
-  ) async {
+  static Future<String> setPassword(String accessToken, String password, String confirm) async {
+    final url = Uri.parse('$baseUrl/auth/set-password');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/set-password'),
+        url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $finalToken',
+          'Authorization': 'Bearer $accessToken',
         },
-        body: json.encode({'password': password, "confirm": confirm}),
+        body: json.encode({'password': password, 'confirm': confirm}),
       );
 
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData['token'];
+        final data = json.decode(response.body);
+        return data['token'];
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Ошибка при установке пароля');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса пароля: $e');
     }
-    return finalToken;
   }
 
-  static Future<String> login(String email, String password) async {
+  static Future<Map<String, dynamic>> initAuth(String email) async {
+    final url = Uri.parse('$baseUrl/auth/init');
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/auth/check-email'),
+        url,
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'password': password, "email": email}),
+        body: json.encode({'email': email}),
       );
-      if (response.statusCode == 401) {
-        return "registration";
-      } else if (response.statusCode == 402 && password == '123456789') {
-        return "login";
-      } else if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData['token'];
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body);
       } else {
-        throw Exception('Неверный пароль');
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Ошибка инициализации');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса initAuth: $e');
     }
   }
 
-  static Future<Map<String, dynamic>> getUser(String? finalToken) async {
-    await Future.delayed(const Duration(milliseconds: 300));
+  static Future<String> verifyPassword(String accessToken, String password) async {
+    final url = Uri.parse('$baseUrl/auth/verify-password');
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: json.encode({'password': password}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['token'];
+      } else {
+        final error = json.decode(response.body);
+        throw Exception(error['message'] ?? 'Неверный пароль');
+      }
+    } catch (e) {
+      throw Exception('Ошибка проверки пароля: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> getUser(String accessToken) async {
+    final url = Uri.parse('$baseUrl/auth/user');
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/auth/user'),
+        url,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $finalToken',
+          'Authorization': 'Bearer $accessToken',
         },
       );
+
       if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        return responseData;
+        return json.decode(response.body);
       } else {
-        throw Exception('Нет авторизации');
+        throw Exception('Ошибка получения пользователя: ${response.statusCode}');
       }
     } catch (e) {
-      rethrow;
+      throw Exception('Ошибка запроса getUser: $e');
     }
   }
 
-  static Future<void> logout() async {
-    await Future.delayed(const Duration(milliseconds: 200));
-    // Ничего не делаем
-  }
+  // static Future<void> logout() async {
+  //   // Заглушка — можно реализовать вызов API при необходимости
+  //   await Future.delayed(const Duration(milliseconds: 200));
+  // }
 
-  static Future<List<dynamic>> getActiveChats(String token) async {
+  static Future<List<dynamic>> getActiveChats(String accessToken) async {
+    final url = Uri.parse('$baseUrl/chats/active');
     final response = await http.get(
-      Uri.parse('$baseUrl/chats/active'),
+      url,
       headers: {
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
       },
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return data ?? []; // Предполагая, что ответ содержит поле 'chats'
+      return data is List ? data : [];
     } else {
-      throw Exception('Failed to load active chats: ${response.statusCode}');
+      throw Exception('Ошибка загрузки активных чатов: ${response.statusCode}');
     }
   }
 
-  static Future<List<dynamic>> getArchiveChats(String token) async {
+  static Future<List<dynamic>> getArchiveChats(String accessToken) async {
+    final url = Uri.parse('$baseUrl/chats/archive');
     final response = await http.get(
-      Uri.parse('$baseUrl/chats/archive'),
+      url,
       headers: {
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $accessToken',
         'Content-Type': 'application/json',
       },
     );
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      return data ?? []; // Предполагая, что ответ содержит поле 'chats'
+      return data is List ? data : [];
     } else {
-      return [];
+      throw Exception('Ошибка загрузки архивных чатов: ${response.statusCode}');
     }
   }
 
-  // Выбор плана подписки
-  static Future<void> selectPlan(String token, int planId) async {
+  static Future<void> selectPlan(String accessToken, int planId) async {
+    final url = Uri.parse('$baseUrl/payment/select');
     final response = await http.post(
-      Uri.parse('$baseUrl/payment/select'),
+      url,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
+        'Authorization': 'Bearer $accessToken',
       },
       body: json.encode({'planId': planId}),
     );
 
     if (response.statusCode == 200) {
-      final responseData = json.decode(response.body);
-      print('План успешно выбран: ${responseData['message']}');
+      final data = json.decode(response.body);
+      log('✅ План выбран: ${data['message']}');
     } else {
-      final errorData = json.decode(response.body);
-      throw Exception(errorData['message'] ?? 'Ошибка при выборе тарифа');
+      final error = json.decode(response.body);
+      throw Exception(error['message'] ?? 'Ошибка при выборе тарифа');
     }
   }
 }

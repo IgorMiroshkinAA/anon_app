@@ -4,12 +4,14 @@ import 'package:flutter_application/services/chat_service.dart';
 import '../models/user_registration.dart';
 import '../services/auth_service.dart';
 import '../models/chat_data.dart';
+import 'package:http/http.dart' as http;
 
 class UserProvider extends ChangeNotifier {
   final UserRegistration _user = UserRegistration(id: 0);
   String? _tempToken;
   String? _finalToken;
   final ChatService _chatService = ChatService();
+  static const String baseUrl = 'http://10.0.2.2:4000/api';
 
   // Добавляем списки чатов
   List<ChatData> _activeChats = [];
@@ -68,21 +70,10 @@ class UserProvider extends ChangeNotifier {
       password,
       confirm,
     );
-    _finalToken = finalToken;
     _user.password = password;
     notifyListeners();
   }
 
-  // Выход
-  void logout() {
-    _finalToken = null;
-    _tempToken = null;
-    _user.reset();
-    _activeChats.clear();
-    _archiveChats.clear();
-    _requestChats.clear();
-    notifyListeners();
-  }
 
   Future<void> _loadChats() async {
     if (_finalToken == null) throw Exception('Финальный токен отсутствует');
@@ -220,34 +211,73 @@ class UserProvider extends ChangeNotifier {
 
   int get activePlanId => _user.levelSubscription ?? 1;
 
-  // Инициализация WebSocket при логине
+  Future<void> logout() async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/auth/logout'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $_finalToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+
+        // Очистка состояния
+        _user.email = null;
+        _user.name = null;
+        _user.age = null;
+        _user.password = null;
+        _finalToken = null;
+        _tempToken = null;
+
+        _activeChats.clear();
+        _archiveChats.clear();
+        _requestChats.clear();
+
+        notifyListeners();
+      } else {
+        throw Exception('Ошибка при выходе: ${response.body}');
+      }
+    } catch (e) {
+      print('Logout error: $e');
+      rethrow;
+    }
+  }
+
   Future<String?> login(String email, String password) async {
     if (email == "login") {
       email = _user.email!;
     }
-    _finalToken = await AuthService.login(email, password);
 
-    if (_finalToken == "registration" || _finalToken == "login") {
-      _user.email = email;
-      return _finalToken;
+    if (_tempToken == null) {
+      throw Exception('Временный токен отсутствует. Сначала вызови initAuth(email)');
     }
 
-    // Получаем данные пользователя
-    final userData = await AuthService.getUser(_finalToken);
-    final user = userData['user'];
-    _user.id = user['id'];
-    _user.email = user['email'];
-    _user.name = user['nickname'];
-    _user.age = user['age'];
+    try {
+      _finalToken = await AuthService.verifyPassword(_tempToken!, password);
 
-    // Инициализируем WebSocket соединение с userId
-    _initializeChatService();
+      final userData = await AuthService.getUser(_finalToken!);
+      final user = userData['user'];
 
-    // Загружаем чаты после успешного входа
-    await _loadChats();
+      _user.id = int.tryParse(user['id'].toString()) ?? 0;
+      _user.email = user['email'];
+      _user.name = user['nickname'];
+      _user.age = user['age'];
 
-    notifyListeners();
-    return null;
+      _initializeChatService();
+
+      try {
+        await _loadChats();
+      } catch (e) {
+        print('Чаты не загружены: $e');
+      }
+
+      notifyListeners();
+      return null;
+    } catch (e) {
+      throw Exception('Неверный пароль или токен');
+    }
   }
 
   void _initializeChatService() {
@@ -310,4 +340,19 @@ class UserProvider extends ChangeNotifier {
     _chatService.disconnect();
     super.dispose();
   }
+
+  Future<String> initAuth(String email) async {
+    final response = await AuthService.initAuth(email);
+    final mode = response['mode']; // 'login' или 'registration'
+    final token = response['token'];
+
+    _tempToken = token;
+    _user.email = email;
+
+    print('📧 initAuth: $email → $mode');
+
+    notifyListeners();
+    return mode;
+  }
+
 }

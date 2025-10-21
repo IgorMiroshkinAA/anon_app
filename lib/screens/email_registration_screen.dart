@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_application/screens/existing_account_password_screen.dart';
 import 'package:flutter_application/screens/enter_code_screen.dart';
@@ -8,13 +9,8 @@ import '../providers/user_provider.dart';
 import 'package:flutter/gestures.dart';
 import 'package:url_launcher/url_launcher.dart' as launcher;
 
-
-enum EmailScreenMode { registration, login }
-
 class EmailRegistrationScreen extends StatefulWidget {
-  final EmailScreenMode mode;
-
-  const EmailRegistrationScreen({super.key, required this.mode});
+  const EmailRegistrationScreen({super.key});
 
   @override
   State<EmailRegistrationScreen> createState() => _EmailRegistrationScreenState();
@@ -48,39 +44,26 @@ class _EmailRegistrationScreenState extends State<EmailRegistrationScreen> {
 
     try {
       final userProvider = context.read<UserProvider>();
+      final mode = await userProvider.initAuth(trimmedEmail); // 'login' | 'registration'
 
-      if (widget.mode == EmailScreenMode.registration) {
-        await userProvider.requestCode(trimmedEmail);
-        if (mounted) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EnterCodeScreen(email: trimmedEmail),
-            ),
-          );
-        }
+      if (!mounted) return;
+
+      if (mode == 'login') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ExistingAccountPasswordScreen(email: trimmedEmail),
+          ),
+        );
+      } else if (mode == 'registration') {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => EnterCodeScreen(email: trimmedEmail),
+          ),
+        );
       } else {
-        final res = await userProvider.login(trimmedEmail, "123456789");
-        if (res == "login") {
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ExistingAccountPasswordScreen(),
-              ),
-            );
-          }
-        } else {
-          await userProvider.requestCode(trimmedEmail);
-          if (mounted) {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => EnterCodeScreen(email: trimmedEmail),
-              ),
-            );
-          }
-        }
+        throw Exception('Неизвестный режим: $mode');
       }
     } catch (e) {
       print("Error: $e");

@@ -32,12 +32,11 @@ class MyApp extends StatelessWidget {
       home: const PreloaderScreen(),
 
       routes: {
-        '/email-registration': (context) => const EmailRegistrationScreen(mode: EmailScreenMode.registration),
+        '/email-registration': (context) => const EmailRegistrationScreen(),
         '/set-username': (context) => const NameRegistrationScreen(),
         '/age-input': (context) => const AgeInputScreen(),
         '/new-password': (context) => const NewPasswordScreen(),
-        '/existing-account-password': (context) =>
-            const ExistingAccountPasswordScreen(),
+        '/existing-password': (context) => ExistingAccountPasswordScreen(email: 'example@email.com'),
         '/main-screen-wrapper': (context) => const MainScreenWrapper(),
         '/profile-acc': (context) => const ProfileAcc(),
       },
